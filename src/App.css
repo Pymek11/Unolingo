@@ -1,0 +1,123 @@
+/* Reset and general styling */
+body {
+  margin: 0;
+  background-color: #eef2f5;
+  font-family: Arial, sans-serif;
+}
+
+/* Container for the entire UI */
+.llm-ui-container {
+  max-width: 900px;
+  height: 90vh; /* Takes up most of the viewport height */
+  margin: 20px auto;
+  padding: 20px;
+  background-color: #ffffff;
+  border-radius: 12px;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
+  display: flex;
+  flex-direction: column;
+  border: 1px solid #ddd;
+}
+
+h2 {
+  text-align: center;
+  color: #333;
+  margin-bottom: 15px;
+}
+
+/* Chat History Area */
+.chat-history {
+  flex-grow: 1; /* Allows it to take up available space */
+  overflow-y: auto;
+  padding: 10px;
+  margin-bottom: 20px;
+  border-radius: 8px;
+  background-color: #f7f9fc;
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+
+/* Individual Message Bubble */
+.message-bubble {
+  padding: 12px 18px;
+  border-radius: 20px;
+  max-width: 85%;
+  line-height: 1.5;
+  word-wrap: break-word;
+}
+
+.role-tag {
+  font-size: 0.7rem;
+  font-weight: bold;
+  margin-bottom: 3px;
+}
+
+/* User Message Styling (Blue/Right) */
+.message-bubble.user {
+  align-self: flex-end;
+  background-color: #007bff;
+  color: white;
+  border-bottom-right-radius: 5px;
+}
+
+.message-bubble.user .role-tag {
+  color: rgba(255, 255, 255, 0.7);
+}
+
+/* LLM (System) Message Styling (Gray/Left) */
+.message-bubble.llm {
+  align-self: flex-start;
+  background-color: #e9ecef;
+  color: #333;
+  border-bottom-left-radius: 5px;
+}
+
+.message-bubble.llm .role-tag {
+  color: #555;
+}
+
+/* Input Form Area */
+.input-form {
+  display: flex;
+  gap: 10px;
+  padding: 10px;
+  border-top: 1px solid #eee;
+}
+
+/* Textarea Input */
+.input-form textarea {
+  flex-grow: 1;
+  padding: 15px;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  resize: none;
+  font-size: 16px;
+  box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+.input-form textarea:focus {
+  border-color: #007bff;
+  outline: none;
+}
+
+/* Send Button */
+.input-form button {
+  padding: 10px 20px;
+  background-color: #28a745;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: bold;
+  transition: background-color 0.2s;
+}
+
+.input-form button:hover:not(:disabled) {
+  background-color: #218838;
+}
+
+.input-form button:disabled {
+  background-color: #90ee90;
+  cursor: not-allowed;
+}
