@@ -1,0 +1,8 @@
+services:
+  nginx:
+    image: nginx:latest
+    ports:
+      - "8080:80"
+    volumes:
+      - ./app:/var/unolingo/app
+      - ./nginx/default.conf:/default.conf:/etc/nginx/default.conf
