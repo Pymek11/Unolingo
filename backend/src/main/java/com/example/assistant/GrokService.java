@@ -28,7 +28,7 @@ public class GrokService {
 
         // Treść zapytania do Groka (zgodna z API xAI)
         Map<String, Object> body = Map.of(
-                "model", "grok-beta",
+                "model", "llama-3.3-70b-versatile",
                 "messages", List.of(
                         Map.of("role", "user", "content", message)
                 )

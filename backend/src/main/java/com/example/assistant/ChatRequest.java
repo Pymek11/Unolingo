@@ -1,10 +1,9 @@
 package com.example.assistant;
 
-import lombok.Data;
-
-@Data // Adnotacja Lombok dla getterów, setterów, toString itp.
 public class ChatRequest {
-    private String prompt;
-    // W przyszłości możesz dodać tu np. historię konwersacji
-    // private List<Message> history;
+    private String message;
+
+    // gettery i settery
+    public String getMessage() { return message; }
+    public void setMessage(String message) { this.message = message; }
 }
