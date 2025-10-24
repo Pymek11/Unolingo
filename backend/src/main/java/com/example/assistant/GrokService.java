@@ -6,6 +6,7 @@ import org.springframework.http.*;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
+import java.util.ArrayList; // Potrzebny import
 import java.util.List;
 import java.util.Map;
 
@@ -21,18 +22,34 @@ public class GrokService {
     private final RestTemplate restTemplate = new RestTemplate();
     private final ObjectMapper mapper = new ObjectMapper();
 
-    public String askGrok(String message) {
+    private static final String SYSTEM_PROMPT = "Jesteś 'Unolingo', przyjaznym i pomocnym asystentem do nauki języka angielskiego. Twoim zadaniem jest prowadzenie naturalnej konwersacji. Jeśli użytkownik popełni błąd gramatyczny, popraw go i krótko wyjaśnij, dlaczego. Zawsze odpowiadaj w języku angielskim, chyba że użytkownik wyraźnie prosi o tłumaczenie.";
+
+    public String askGrok(String userMessage) {
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);
         headers.setBearerAuth(apiKey);
 
-        // Treść zapytania do Groka (zgodna z API xAI)
+        // Tworzymy dynamiczną listę wiadomości, aby dodać prompt systemowy
+        List<Map<String, Object>> messages = new ArrayList<>();
+
+        // 1. Dodajemy nasz stały prompt systemowy (instrukcje dla AI)
+        messages.add(Map.of(
+                "role", "system",
+                "content", SYSTEM_PROMPT
+        ));
+
+        // 2. Dodajemy właściwą wiadomość od użytkownika
+        messages.add(Map.of(
+                "role", "user",
+                "content", userMessage
+        ));
+
+        // Treść zapytania do Groka (teraz zawiera 2 wiadomości)
         Map<String, Object> body = Map.of(
                 "model", "llama-3.3-70b-versatile",
-                "messages", List.of(
-                        Map.of("role", "user", "content", message)
-                )
+                "messages", messages // Przekazujemy zmodyfikowaną listę
         );
+
 
         HttpEntity<Map<String, Object>> request = new HttpEntity<>(body, headers);
 
@@ -49,12 +66,11 @@ public class GrokService {
             System.out.println("Body: " + response.getBody());
             System.out.println("=========================");
 
-            // Sprawdź, czy odpowiedź jest poprawna
             if (!response.getStatusCode().is2xxSuccessful()) {
                 return "Błąd API Groka: " + response.getStatusCode();
             }
 
-            // Parsuj JSON tylko, jeśli odpowiedź jest w formacie JSON
+            // Twój kod do parsowania jest poprawny i nie wymaga zmian
             Map<String, Object> responseBody = mapper.readValue(response.getBody(), Map.class);
 
             List<Map<String, Object>> choices = (List<Map<String, Object>>) responseBody.get("choices");
