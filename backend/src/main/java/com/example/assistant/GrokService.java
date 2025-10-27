@@ -52,8 +52,16 @@ public class GrokService {
                 "content", SYSTEM_PROMPT
         ));
 
-        // 2. Dodajemy CAŁĄ zapisaną historię
-        messagesToSend.addAll(currentHistory);
+        // Wewnątrz metody askGrok:
+
+
+
+    // 2. Dodajemy CAŁĄ zapisaną historię, ale tylko 20 ostatnich wiadomości (10 par)
+        int maxMessages = 20; // 10 wiadomości użytkownika + 10 odpowiedzi asystenta
+        int startIndex = Math.max(0, currentHistory.size() - maxMessages);
+        List<Map<String, Object>> recentHistory = currentHistory.subList(startIndex, currentHistory.size());
+
+        messagesToSend.addAll(recentHistory);
 
         // Wiadomość użytkownika do zapisania i wysłania
         Map<String, Object> userMsgMap = Map.of(
