@@ -150,9 +150,19 @@ const App = () => {
     if(isSendingRef.current) return;
     isSendingRef.current = true;
     setIsSending(true);
-    // Instead of immediately sending the prompt, create/overwrite the most-recent chat
-    // and insert the prompt as the first user message so the user sees it in the conversation.
+    // Instead of creating another empty chat, check if an empty chat already exists.
     const t = (text || '').trim();
+    const existingEmptyIndex = recentChats.findIndex(c => !c.messages || c.messages.length === 0);
+    if(existingEmptyIndex !== -1){
+      // Select the existing empty chat and focus the input instead of creating a duplicate
+      setSelectedChatIndex(existingEmptyIndex);
+      setInput('');
+      setTimeout(()=>{ inputRef.current?.focus(); }, 80);
+      setTimeout(()=>{ isSendingRef.current = false; setIsSending(false); }, 200);
+      setTimeout(()=> setScrollTrigger(s => s + 1), 80);
+      return;
+    }
+
     // create an empty chat so the user gets a blank conversation to type into
     const newChat = { id: Date.now(), title: 'Nowa rozmowa', messages: [] };
     // insert new chat at the top and drop the oldest from the bottom to maintain max 10
