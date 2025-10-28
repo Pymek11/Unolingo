@@ -1,8 +1,9 @@
 /* Base resets */
+html, body, #root { height: 100%; }
 * { box-sizing: border-box; }
 body { margin: 0; font-family: Inter, system-ui, -apple-system, "Segoe UI", Roboto, Arial; background: #111317; color: #e6eef6; }
 
-.llm-ui-root { padding: 20px; }
+.llm-ui-root { padding: 20px; height: 100vh; overflow: hidden; }
 .llm-ui-container {
   height: calc(100vh - 40px);
   max-width: 1200px;
@@ -16,7 +17,8 @@ body { margin: 0; font-family: Inter, system-ui, -apple-system, "Segoe UI", Robo
 
 /* Sidebar */
 .sidebar {
-  width: 320px;
+  flex: 0 0 280px;
+  width: 280px;
   background: #111418;
   border-right: 1px solid rgba(255,255,255,0.04);
   padding: 22px 18px;
@@ -27,17 +29,26 @@ body { margin: 0; font-family: Inter, system-ui, -apple-system, "Segoe UI", Robo
 .sidebar-header { display:flex; align-items:center; gap:10px; margin-bottom: 12px; }
 .logo { font-weight: 700; font-size: 18px; color: #8fd3ff; }
 .sidebar-title { font-size: 14px; margin: 6px 0 12px; color: #c9d6df; }
-.prompts-list { list-style: none; padding:0; margin:0; display:flex; flex-direction:column; gap:8px; overflow:auto; }
+.prompts-list { list-style: none; padding:0; margin:0; display:flex; flex-direction:column; gap:8px; overflow:auto; max-height: calc(100vh - 160px); }
 .prompt-item { padding: 10px 12px; border-radius: 8px; font-size: 13px; color:#cdd9e6; cursor:pointer; background: transparent; transition: background .12s, transform .06s; }
 .prompt-item:hover { background: rgba(255,255,255,0.02); transform: translateY(-1px); }
 .prompt-item.active { background: linear-gradient(90deg, rgba(137,180,255,0.08), rgba(137,180,255,0.03)); box-shadow: inset 0 1px 0 rgba(255,255,255,0.02); }
 
 /* Main area (chat + composer) */
 .main-area { flex: 1; display:flex; flex-direction:column; background: linear-gradient(180deg,#0c0d0f,#0f1113); }
+.main-area { min-height: 0; }
 .chat-header { height: 56px; display:flex; align-items:center; padding:0 18px; border-bottom:1px solid rgba(255,255,255,0.02); }
 
 .chat-area { display:flex; flex-direction:column; flex:1; }
+.chat-area { min-height: 0; }
 .messages { padding: 20px; flex:1; overflow:auto; display:flex; flex-direction:column; gap:12px; }
+.messages { min-height: 0; padding-bottom: 120px; }
+.messages::-webkit-scrollbar { width: 10px; }
+.messages::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.06); border-radius: 8px; }
+.messages { scrollbar-gutter: stable; }
+
+.prompts-list::-webkit-scrollbar { width: 10px; }
+.prompts-list::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.04); border-radius: 8px; }
 .message-bubble { max-width: 80%; padding: 12px 14px; border-radius: 12px; line-height:1.4; }
 .message-bubble .role-tag { font-size: 11px; opacity:0.8; margin-bottom:6px; }
 
@@ -52,6 +63,10 @@ body { margin: 0; font-family: Inter, system-ui, -apple-system, "Segoe UI", Robo
 .icon-btn { background: transparent; border: 1px solid rgba(255,255,255,0.03); color: #d7e9ff; padding:10px 12px; border-radius:8px; cursor:pointer; font-size:16px; }
 .send-btn { background: linear-gradient(90deg,#5ddcff,#6b9dff); color:#07203a; border:none; padding:10px 16px; border-radius:10px; cursor:pointer; font-weight:700; }
 .icon-btn:active, .send-btn:active { transform: translateY(1px); }
+
+/* Disable interactions while sending */
+.composer[aria-busy="true"] { pointer-events: none; opacity: 0.92; }
+.send-btn[disabled] { opacity: 0.6; cursor: not-allowed; }
 
 /* small responsive tweaks */
 @media (max-width: 850px){
