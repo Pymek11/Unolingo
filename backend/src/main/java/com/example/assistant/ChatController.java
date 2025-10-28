@@ -6,7 +6,7 @@ import org.springframework.web.bind.annotation.*;
 @RequestMapping("/api/chat")
 // W celu połączenia z Reactem, konieczne może być dodanie adnotacji CORS,
 // jeśli Spring Boot i React będą działać na różnych portach.
-@CrossOrigin(origins = "http://localhost:3000") // Przykładowa konfiguracja dla Reacta
+@CrossOrigin(origins = "http://localhost:3001") // Przykładowa konfiguracja dla Reacta
 public class ChatController {
 
     private final GrokService grokService;
