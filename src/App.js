@@ -14,14 +14,14 @@ const SAMPLE_PROMPTS = [
   "Rozpocznij konwersację na temat moich ulubionych hobby."
 ];
 
-function Sidebar({prompts, onSelect, selectedIndex, onStartNewWithSelected}){
+function Sidebar({prompts, onSelect, selectedIndex, onStartWithSelected}){
   const selected = prompts[selectedIndex];
   return (
     <aside className="sidebar">
       <div className="sidebar-header">
         <div className="logo">Unolingo</div>
-        <button className="start-btn" onClick={() => onStartNewWithSelected && onStartNewWithSelected(selected)}>Rozpocznij nową naukę</button>
-  </div>
+        <button className="start-btn" onClick={() => onStartWithSelected && onStartWithSelected(selected)}>Rozpocznij nową naukę</button>
+      </div>
       <ul className="prompts-list">
         {prompts.map((p, i) => (
           <li key={i} className={"prompt-item " + (i===selectedIndex? 'active':'')} onClick={() => onSelect(i)}>
@@ -72,7 +72,7 @@ function ChatArea({messages, forceScrollTrigger}){
   );
 }
 
-function Composer({value, onChange, onSend, onMic, onImage, isSending}){
+function Composer({value, onChange, onSend, onMic, onImage, isSending, inputRef}){
   const handleSubmit = (e) =>{
     e.preventDefault();
     // debug: log submit origin and guard state
@@ -88,6 +88,7 @@ function Composer({value, onChange, onSend, onMic, onImage, isSending}){
     <form className="composer" onSubmit={handleSubmit} aria-busy={isSending}>
       <div className="composer-input">
         <input
+          ref={inputRef}
           aria-label="message"
           placeholder="O czym chcesz się nauczyć?"
           value={value}
@@ -106,6 +107,7 @@ function Composer({value, onChange, onSend, onMic, onImage, isSending}){
 const App = () => {
   const [selectedChatIndex, setSelectedChatIndex] = useState(-1);
   const [input, setInput] = useState('');
+  const inputRef = useRef(null);
   const [isSending, setIsSending] = useState(false);
   const isSendingRef = useRef(false);
   const sendCooldownRef = useRef(0);
@@ -148,24 +150,17 @@ const App = () => {
     if(isSendingRef.current) return;
     isSendingRef.current = true;
     setIsSending(true);
-
+    // Instead of immediately sending the prompt, create/overwrite the most-recent chat
+    // and insert the prompt as the first user message so the user sees it in the conversation.
     const t = (text || '').trim();
-    if(!t){ isSendingRef.current = false; setIsSending(false); return; }
-
-    const reply = {role: 'llm', text: 'To jest przykładowa odpowiedź. (Jeszcze nie podłączono modelu)'};
-    setRecentChats((prev) => {
-      const copy = prev.slice();
-      if(copy.length > 0){
-        const chat = {...copy[0]};
-        chat.title = t;
-        chat.messages = [{role:'user', text: t}, reply];
-        copy[0] = chat;
-        return copy;
-      }
-      const newChat = { id: Date.now(), title: t, messages: [{role:'user', text: t}, reply] };
-      return [newChat, ...copy].slice(0,10);
-    });
+    // create an empty chat so the user gets a blank conversation to type into
+    const newChat = { id: Date.now(), title: 'Nowa rozmowa', messages: [] };
+    // insert new chat at the top and drop the oldest from the bottom to maintain max 10
+    setRecentChats((prev) => [newChat, ...prev].slice(0,10));
     setSelectedChatIndex(0);
+    setInput('');
+    // focus the composer input so user can type a follow-up or resend the prompt
+    setTimeout(()=>{ inputRef.current?.focus(); }, 80);
     setTimeout(()=>{ isSendingRef.current = false; setIsSending(false); }, 200);
     setTimeout(()=> setScrollTrigger(s => s + 1), 80);
   }
@@ -213,9 +208,15 @@ const App = () => {
       setRecentChats((prev) => {
         const copy = prev.slice();
         const chat = copy.splice(selectedChatIndex,1)[0];
-        const last = chat.messages[chat.messages.length-1];
-        if(!(last && last.role === 'user' && last.text === text)){
-          chat.messages = [...chat.messages, {role:'user', text}, reply];
+        // If the chat is empty (created by "Nowa rozmowa"), set its title to the sent message
+        if(!chat.messages || chat.messages.length === 0){
+          chat.title = text.slice(0,80);
+          chat.messages = [{role:'user', text}, reply];
+        } else {
+          const last = chat.messages[chat.messages.length-1];
+          if(!(last && last.role === 'user' && last.text === text)){
+            chat.messages = [...chat.messages, {role:'user', text}, reply];
+          }
         }
         const next = [chat, ...copy].slice(0,10);
         return next;
@@ -254,10 +255,10 @@ const App = () => {
   return (
     <div className="llm-ui-root">
       <div className="llm-ui-container">
-  <Sidebar prompts={recentChats.map(c => c.title)} onSelect={setSelectedChatIndex} selectedIndex={selectedChatIndex} onStartNewWithSelected={startNewWithSelected} />
+  <Sidebar prompts={recentChats.map(c => c.title)} onSelect={setSelectedChatIndex} selectedIndex={selectedChatIndex} onStartWithSelected={sendMessageText} />
         <main className="main-area">
           <ChatArea messages={currentMessages} forceScrollTrigger={scrollTrigger} />
-          <Composer value={input} onChange={setInput} onSend={handleSend} onMic={handleMic} onImage={handleImage} isSending={isSending} />
+          <Composer value={input} onChange={setInput} onSend={handleSend} onMic={handleMic} onImage={handleImage} isSending={isSending} inputRef={inputRef} />
         </main>
       </div>
     </div>
