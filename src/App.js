@@ -14,20 +14,24 @@ const SAMPLE_PROMPTS = [
     "Rozpocznij konwersację na temat moich ulubionych hobby."
 ];
 
-function Sidebar({ prompts, onSelect, selectedId, onStartWithSelected }) {
-    const selected = prompts.find((p) => p.id === selectedId);
+// === ZMODYFIKOWANY KOMPONENT SIDEBAR ===
+// Usunięto 'onStartWithSelected' i stary przycisk.
+// Przycisk 'start-btn' wywołuje teraz 'onNewChat'.
+function Sidebar({ prompts, onSelect, selectedId, onNewChat }) {
     return (
         <aside className="sidebar">
             <div className="sidebar-header">
                 <div className="logo">Unolingo</div>
                 <button
                     className="start-btn"
-                    onClick={() => onStartWithSelected && onStartWithSelected(selected?.title)}
+                    onClick={onNewChat} // <-- ZMIANA: Ten przycisk rozpoczyna nową rozmowę
                 >
                     Rozpocznij
                 </button>
             </div>
-            <div className="sidebar-title">Rozpocznij nową naukę</div>
+
+            {/* BIAŁY PRZYCISK "Rozpocznij nową naukę" ZOSTAŁ USUNIĘTY */}
+
             <ul className="prompts-list">
                 {prompts.map((p) => (
                     <li
@@ -120,7 +124,7 @@ function Composer({ value, onChange, onSend, onMic, onImage, isSending }) {
     );
 }
 
-// ZMIEŃ PORT, JEŚLI TRZEBA
+// Ustawiony poprawny port 8081
 const API_URL = "http://localhost:8081/api/chat";
 
 const App = () => {
@@ -145,83 +149,23 @@ const App = () => {
     });
 
     useEffect(() => {
-        if (selectedChatId === null && recentChats.length > 0) {
-            setSelectedChatId(recentChats[0].id);
-        }
-    }, [selectedChatId, recentChats]);
-
-    useEffect(() => {
         try {
             localStorage.setItem("recentChats", JSON.stringify(recentChats));
         } catch (e) {}
     }, [recentChats]);
 
-    // =================================================================
-    // ZAKTUALIZOWANA FUNKCJA (POPRAWKA IMMUTABILITY)
-    // =================================================================
-    async function sendMessageText(text) {
-        if (isSendingRef.current) return;
-        const t = (text || "").trim();
-        if (!t) return;
+    // Zakomentowany useEffect, aby nowa rozmowa była pusta
+    // useEffect(() => {
+    //   if (selectedChatId === null && recentChats.length > 0) {
+    //     setSelectedChatId(recentChats[0].id);
+    //   }
+    // }, [selectedChatId, recentChats]);
 
-        isSendingRef.current = true;
-        setIsSending(true);
 
-        const newChatId = Date.now();
-        const userMessage = { role: "user", text: t };
+    // FUNKCJA 'sendMessageText' ZOSTAŁA USUNIĘTA, GDYŻ NIE JEST JUŻ UŻYWANA
 
-        // 1. Utwórz nowy czat i dodaj wiadomość użytkownika (Immutable)
-        const newChat = { id: newChatId, title: t, messages: [userMessage] };
-        setRecentChats((prev) => [newChat, ...prev.slice(0, 9)]); // Bezpieczne dodanie
-        setSelectedChatId(newChatId);
-        setTimeout(() => setScrollTrigger((s) => s + 1), 80);
 
-        let llmMessage;
-
-        try {
-            // 2. Wywołaj API
-            const response = await fetch(API_URL, {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({
-                    message: t,
-                    sessionId: String(newChatId),
-                }),
-            });
-
-            if (!response.ok) {
-                throw new Error(`Błąd HTTP: ${response.status}`);
-            }
-
-            const llmResponseText = await response.text();
-            llmMessage = { role: "llm", text: llmResponseText };
-
-        } catch (error) {
-            console.error("Błąd podczas wysyłania wiadomości:", error);
-            llmMessage = {
-                role: "llm",
-                text: `Wystąpił błąd: ${error.message}. Upewnij się, że serwer backend działa.`,
-            };
-        }
-
-        // 3. Dodaj odpowiedź LLM (lub błąd) do stanu (Immutable)
-        setRecentChats((prev) =>
-            prev.map(chat =>
-                chat.id === newChatId
-                    ? { ...chat, messages: [...chat.messages, llmMessage] }
-                    : chat
-            )
-        );
-
-        // 4. Zakończ wysyłanie
-        isSendingRef.current = false;
-        setIsSending(false);
-        setTimeout(() => setScrollTrigger((s) => s + 1), 80);
-    }
-
-    // =================================================================
-    // ZAKTUALIZOWANA FUNKCJA (POPRAWKA IMMUTABILITY)
-    // =================================================================
+    /** Wysyła wiadomość z pola input (przycisk "Wyślij") */
     async function handleSend() {
         if (isSendingRef.current) return;
         const text = input.trim();
@@ -238,29 +182,24 @@ const App = () => {
             chatId = Date.now();
             isNewChat = true;
         }
-
         const userMessage = { role: "user", text };
 
-        // 1. Natychmiast dodaj wiadomość użytkownika do UI (Immutable)
         setRecentChats((prev) => {
             if (isNewChat) {
                 const newChat = { id: chatId, title: text.slice(0, 80), messages: [userMessage] };
                 return [newChat, ...prev.slice(0, 9)];
             }
 
-            // Znajdź czat, stwórz jego kopię z nową wiadomością i przesuń na górę
             const chatIndex = prev.findIndex(c => c.id === chatId);
-            if (chatIndex === -1) { // Fallback, gdyby czat zniknął
+            if (chatIndex === -1) {
                 const newChat = { id: chatId, title: text.slice(0, 80), messages: [userMessage] };
                 return [newChat, ...prev.slice(0, 9)];
             }
-
             const existingChat = prev[chatIndex];
             const updatedChat = {
                 ...existingChat,
                 messages: [...existingChat.messages, userMessage],
             };
-
             const otherChats = prev.filter(c => c.id !== chatId);
             return [updatedChat, ...otherChats];
         });
@@ -268,29 +207,18 @@ const App = () => {
         if (isNewChat) {
             setSelectedChatId(chatId);
         }
-
         setTimeout(() => setScrollTrigger((t) => t + 1), 60);
 
         let llmMessage;
-
         try {
-            // 2. Wywołaj API
             const response = await fetch(API_URL, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({
-                    message: text,
-                    sessionId: String(chatId),
-                }),
+                body: JSON.stringify({ message: text, sessionId: String(chatId) }),
             });
-
-            if (!response.ok) {
-                throw new Error(`Błąd HTTP: ${response.status}`);
-            }
-
+            if (!response.ok) throw new Error(`Błąd HTTP: ${response.status}`);
             const llmResponseText = await response.text();
             llmMessage = { role: "llm", text: llmResponseText };
-
         } catch (error) {
             console.error("Błąd podczas wysyłania wiadomości:", error);
             llmMessage = {
@@ -299,7 +227,6 @@ const App = () => {
             };
         }
 
-        // 3. Dodaj odpowiedź LLM do stanu (Immutable)
         setRecentChats((prev) =>
             prev.map(chat =>
                 chat.id === chatId
@@ -308,7 +235,6 @@ const App = () => {
             )
         );
 
-        // 4. Zakończ wysyłanie
         isSendingRef.current = false;
         setIsSending(false);
         setTimeout(() => setScrollTrigger((t) => t + 1), 60);
@@ -322,19 +248,28 @@ const App = () => {
         alert("Image upload action (not implemented)");
     }
 
+    /** Czyści zaznaczenie, co resetuje czat do pustego widoku */
+    function handleNewChat() {
+        setSelectedChatId(null);
+        setInput("");
+    }
+
+    // Logika wyświetlania wiadomości
     const currentChat = recentChats.find((c) => c.id === selectedChatId);
     const currentMessages = currentChat
         ? currentChat.messages
-        : [{ role: "llm", text: "Witaj! Napisz swoją wiadomość do asystenta ai!." }];
+        : []; // Pusta tablica dla nowej rozmowy
 
     return (
         <div className="llm-ui-root">
             <div className="llm-ui-container">
+                {/* === ZMODYFIKOWANE WYWOŁANIE SIDEBAR === */}
+                {/* Usunięto 'onStartWithSelected' */}
                 <Sidebar
                     prompts={recentChats.map((c) => ({ id: c.id, title: c.title }))}
                     onSelect={setSelectedChatId}
                     selectedId={selectedChatId}
-                    onStartWithSelected={(title) => sendMessageText(title)}
+                    onNewChat={handleNewChat}
                 />
                 <main className="main-area">
                     <ChatArea messages={currentMessages} forceScrollTrigger={scrollTrigger} />
