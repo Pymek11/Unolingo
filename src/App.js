@@ -1,17 +1,9 @@
 import React, { useState, useRef, useEffect } from "react";
 import "./App.css";
+import SpeechRecognition, { useSpeechRecognition } from 'react-speech-recognition';
 
 const SAMPLE_PROMPTS = [
-    "Jak powiedzieć smacznego po angielsku?",
-    "Popraw gramatykę w zdaniu: She go to school everyday.",
-    "Co oznacza słowo ubiquitous?",
-    "Nagraj moją wymowę słowa thorough.",
-    "Opisz ten obrazek (użytkownik przesłał zdjęcie psa) po angielsku.",
-    "Przetłumacz: Czy mógłbyś mi pomóc znaleźć drogę?",
-    "Stwórz krótką historię o podróży w kosmosie, używając czasu Past Simple.",
-    "Wyjaśnij różnicę między affect a effect.",
-    "Daj mi 5 przykładów zdań z idiomem break a leg.",
-    "Rozpocznij konwersację na temat moich ulubionych hobby."
+
 ];
 
 // === ZMODYFIKOWANY KOMPONENT SIDEBAR ===
@@ -92,7 +84,7 @@ function ChatArea({ messages, forceScrollTrigger }) {
     );
 }
 
-function Composer({ value, onChange, onSend, onMic, onImage, isSending }) {
+function Composer({ value, onChange, onSend, onMic, onImage, isSending, isListening }) { // <--- NOWOŚĆ: isListening
     const handleSubmit = (e) => {
         e.preventDefault();
         if (isSending) return;
@@ -110,8 +102,9 @@ function Composer({ value, onChange, onSend, onMic, onImage, isSending }) {
                 />
             </div>
             <div className="composer-actions">
+                {/* Zmieniamy ikonę na podstawie stanu 'isListening' */}
                 <button type="button" className="icon-btn" onClick={onMic} title="Microphone">
-                    🎙️
+                    {isListening ? "🔴" : "🎙️"} {/* <--- ZMIANA */}
                 </button>
                 <button type="button" className="icon-btn" onClick={onImage} title="Image">
                     🖼️
@@ -147,6 +140,22 @@ const App = () => {
             return [];
         }
     });
+    const {
+        transcript,
+        listening,
+        resetTranscript,
+        browserSupportsSpeechRecognition
+    } = useSpeechRecognition();
+
+    // Ten useEffect synchronizuje tekst z dyktowania ze stanem 'input'
+    useEffect(() => {
+        if (transcript) {
+            setInput(transcript);
+        }
+    }, [transcript, setInput]);
+
+
+
 
     useEffect(() => {
         try {
@@ -241,7 +250,18 @@ const App = () => {
     }
 
     function handleMic() {
-        alert("Microphone action (not implemented)");
+        if (!browserSupportsSpeechRecognition) {
+            alert("Twoja przeglądarka nie wspiera dyktowania.");
+            return;
+        }
+
+        if (listening) {
+            SpeechRecognition.stopListening(); // Zatrzymaj nasłuchiwanie
+        } else {
+            resetTranscript(); // Zresetuj stary tekst
+            // Używamy 'pl-PL' dla języka polskiego
+            SpeechRecognition.startListening({ continuous: true, language: 'pl-PL' }); // Rozpocznij nasłuchiwanie
+        }
     }
 
     function handleImage() {
@@ -252,6 +272,7 @@ const App = () => {
     function handleNewChat() {
         setSelectedChatId(null);
         setInput("");
+        resetTranscript();
     }
 
     // Logika wyświetlania wiadomości
@@ -280,6 +301,7 @@ const App = () => {
                         onMic={handleMic}
                         onImage={handleImage}
                         isSending={isSending}
+                        isListening={listening}
                     />
                 </main>
             </div>
